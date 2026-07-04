@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>LifeGame — Dzwonek i Trąbka</title>
+<style>
+  :root{
+    --bg-0:#0b0d10;
+    --bg-1:#15181c;
+    --gold:#c9a227;
+    --gold-bright:#f0c94a;
+    --red:#a3231f;
+    --red-bright:#e2372f;
+    --ivory:#ece6d6;
+    --dim:#6b6f76;
+    --line: rgba(236,230,214,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(201,162,39,0.08), transparent 55%),
+      var(--bg-0);
+    color:var(--ivory);
+    font-family: 'Georgia', 'Iowan Old Style', serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 16px 40px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:6px;
+  }
+  .eyebrow{
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--dim);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+  h1{
+    font-weight:400;
+    font-size:clamp(22px, 4vw, 34px);
+    margin:6px 0 0;
+    letter-spacing:0.02em;
+  }
+  h1 em{ color:var(--gold-bright); font-style:normal; }
+
+  .buttons{
+    display:flex;
+    gap:clamp(18px, 5vw, 56px);
+    flex-wrap:wrap;
+    justify-content:center;
+    margin: 34px 0 18px;
+    width:100%;
+    max-width:900px;
+  }
+
+  .signal{
+    position:relative;
+    flex:1 1 300px;
+    max-width:380px;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:10px;
+    color:var(--ivory);
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .08s ease, box-shadow .18s ease;
+  }
+  .signal:active{ transform: scale(0.96); }
+
+  .signal .icon{ font-size: clamp(46px, 10vw, 74px); line-height:1; }
+  .signal .label{
+    font-family:'Georgia', serif;
+    font-size:clamp(20px, 3vw, 28px);
+    letter-spacing:0.06em;
+  }
+  .signal .sub{
+    font-size:11px;
+    letter-spacing:0.25em;
+    text-transform:uppercase;
+    color:rgba(236,230,214,0.65);
+  }
+
+  .bell{
+    background: radial-gradient(circle at 35% 30%, #3a3110, var(--bg-1) 70%);
+    box-shadow:
+      0 0 0 3px rgba(201,162,39,0.35),
+      0 10px 30px rgba(0,0,0,0.55),
+      inset 0 0 40px rgba(201,162,39,0.08);
+  }
+  .bell:hover{ box-shadow: 0 0 0 3px var(--gold), 0 12px 34px rgba(0,0,0,0.6), inset 0 0 50px rgba(201,162,39,0.15); }
+  .bell.flash{
+    box-shadow: 0 0 0 6px var(--gold-bright), 0 0 70px 12px rgba(240,201,74,0.55);
+  }
+
+  .horn{
+    background: radial-gradient(circle at 35% 30%, #3a1210, var(--bg-1) 70%);
+    box-shadow:
+      0 0 0 3px rgba(163,35,31,0.4),
+      0 10px 30px rgba(0,0,0,0.55),
+      inset 0 0 40px rgba(163,35,31,0.08);
+  }
+  .horn:hover{ box-shadow: 0 0 0 3px var(--red), 0 12px 34px rgba(0,0,0,0.6), inset 0 0 50px rgba(163,35,31,0.15); }
+  .horn.flash{
+    box-shadow: 0 0 0 6px var(--red-bright), 0 0 70px 12px rgba(226,55,47,0.55);
+  }
+
+  .panel{
+    width:100%;
+    max-width:640px;
+    margin-top:10px;
+    border-top:1px solid var(--line);
+    padding-top:18px;
+  }
+  .panel summary{
+    cursor:pointer;
+    text-align:center;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--dim);
+    list-style:none;
+    padding-bottom: 12px;
+  }
+  .panel summary::-webkit-details-marker{ display:none; }
+  .panel summary:before{ content:"⚙ "; }
+
+  .controls{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:22px;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+  }
+  @media (max-width:560px){ .controls{ grid-template-columns: 1fr; } }
+
+  .ctrl-group{
+    background: var(--bg-1);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .ctrl-group h3{
+    margin:0 0 12px;
+    font-family:'Georgia', serif;
+    font-weight:400;
+    font-size:15px;
+  }
+  .ctrl-group.gold h3{ color: var(--gold-bright); }
+  .ctrl-group.red h3{ color: var(--red-bright); }
+
+  .row{ margin-bottom:12px; }
+  .row label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--dim);
+    margin-bottom:6px;
+  }
+  input[type="range"]{
+    width:100%;
+    accent-color: var(--gold-bright);
+  }
+  .ctrl-group.red input[type="range"]{ accent-color: var(--red-bright); }
+
+  input[type="file"]{
+    width:100%;
+    font-size:12px;
+    color: var(--ivory);
+  }
+
+  .filename{
+    font-size:11px;
+    color:var(--dim);
+    margin-top:6px;
+    word-break:break-all;
+  }
+
+  .reset-btn{
+    margin-top:4px;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--dim);
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+  }
+  .reset-btn:hover{ color:var(--ivory); border-color: var(--dim); }
+
+  footer{
+    margin-top:22px;
+    font-size:11px;
+    color:var(--dim);
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    letter-spacing:0.05em;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <div class="eyebrow">Life Game</div>
+    <h1>Głos <em>Gościa</em></h1>
+  </header>
+
+  <div class="buttons">
+    <button class="signal bell" id="bellBtn" aria-label="Dzwonek — prawda, tak było">
+      <span class="icon">🔔</span>
+      <span class="label">Dzwonek</span>
+      <span class="sub">tak, tak było</span>
+    </button>
+
+    <button class="signal horn" id="hornBtn" aria-label="Trąbka — fałsz, tak nie było">
+      <span class="icon">📯</span>
+      <span class="label">Trąbka</span>
+      <span class="sub">nie, tak nie było</span>
+    </button>
+  </div>
+
+  <details class="panel">
+    <summary>Ustawienia dźwięku</summary>
+    <div class="controls">
+      <div class="ctrl-group gold">
+        <h3>🔔 Dzwonek</h3>
+        <div class="row">
+          <label for="bellVol">Głośność</label>
+          <input type="range" id="bellVol" min="0" max="1" step="0.01" value="0.8">
+        </div>
+        <div class="row">
+          <label for="bellFile">Własny dźwięk (wav / mp3 / ogg...)</label>
+          <input type="file" id="bellFile" accept="audio/*">
+          <div class="filename" id="bellFileName">Domyślny dźwięk: sounds/bell.mp3</div>
+          <button class="reset-btn" id="bellReset">Przywróć domyślny</button>
+        </div>
+      </div>
+
+      <div class="ctrl-group red">
+        <h3>📯 Trąbka</h3>
+        <div class="row">
+          <label for="hornVol">Głośność</label>
+          <input type="range" id="hornVol" min="0" max="1" step="0.01" value="0.8">
+        </div>
+        <div class="row">
+          <label for="hornFile">Własny dźwięk (wav / mp3 / ogg...)</label>
+          <input type="file" id="hornFile" accept="audio/*">
+          <div class="filename" id="hornFileName">Domyślny dźwięk: sounds/zonk.mp3</div>
+          <button class="reset-btn" id="hornReset">Przywróć domyślny</button>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <footer>Dotknij dużego przycisku, aby dać sygnał · dźwięki i pliki wczytują się tylko na czas tej sesji</footer>
+</div>
+
+<script>
+(function(){
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const actx = new AudioCtx();
+
+  // ---- state ----
+  // Domyślne pliki dźwiękowe dostarczone przez użytkownika (w folderze /sounds obok index.html)
+  const DEFAULT_SOUNDS = {
+    bell: 'sounds/bell.mp3',
+    horn: 'sounds/zonk.mp3'
+  };
+  const state = {
+    bell: { buffer: null, customUrl: DEFAULT_SOUNDS.bell, vol: 0.8, isDefault: true },
+    horn: { buffer: null, customUrl: DEFAULT_SOUNDS.horn, vol: 0.8, isDefault: true }
+  };
+
+  // ---- synthesized default sounds ----
+  function playSynthBell(vol){
+    const now = actx.currentTime;
+    const freqs = [1046.5, 1568, 2093]; // bright bell-like partials
+    freqs.forEach((f, i) => {
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      const peak = vol * (i === 0 ? 0.5 : 0.22);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(peak, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6 - i*0.2);
+      osc.connect(gain).connect(actx.destination);
+      osc.start(now);
+      osc.stop(now + 1.7);
+    });
+  }
+
+  function playSynthHorn(vol){
+    const now = actx.currentTime;
+    const osc = actx.createOscillator();
+    const osc2 = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = 'sawtooth';
+    osc2.type = 'square';
+    osc.frequency.setValueAtTime(220, now);
+    osc2.frequency.setValueAtTime(221, now);
+    osc.frequency.linearRampToValueAtTime(180, now + 0.5);
+    osc2.frequency.linearRampToValueAtTime(181, now + 0.5);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(vol * 0.5, now + 0.04);
+    gain.gain.setValueAtTime(vol * 0.5, now + 0.42);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+    osc.connect(gain);
+    osc2.connect(gain);
+    gain.connect(actx.destination);
+    osc.start(now); osc2.start(now);
+    osc.stop(now + 0.6); osc2.stop(now + 0.6);
+  }
+
+  // ---- custom file playback via <audio> element (simplest, robust for any format) ----
+  function makePlayer(key, src){
+    const audioEl = new Audio(src);
+    audioEl.preload = 'auto';
+    // jeśli plik mp3 nie wczyta się (np. zły folder/nazwa), wracamy do dźwięku syntezowanego
+    audioEl.addEventListener('error', () => {
+      state[key].loadFailed = true;
+    });
+    return audioEl;
+  }
+  const players = {
+    bell: makePlayer('bell', DEFAULT_SOUNDS.bell),
+    horn: makePlayer('horn', DEFAULT_SOUNDS.horn)
+  };
+
+  function playSignal(key){
+    const s = state[key];
+    if (actx.state === 'suspended') actx.resume();
+
+    if (s.customUrl && !s.loadFailed){
+      const el = players[key];
+      el.volume = s.vol;
+      el.currentTime = 0;
+      el.play().catch(()=>{
+        // fallback jeśli odtwarzanie się nie uda
+        if (key === 'bell') playSynthBell(s.vol); else playSynthHorn(s.vol);
+      });
+    } else {
+      if (key === 'bell') playSynthBell(s.vol);
+      else playSynthHorn(s.vol);
+    }
+  }
+
+  function flash(el){
+    el.classList.add('flash');
+    setTimeout(()=> el.classList.remove('flash'), 260);
+  }
+
+  // ---- wire up buttons ----
+  const bellBtn = document.getElementById('bellBtn');
+  const hornBtn = document.getElementById('hornBtn');
+
+  bellBtn.addEventListener('click', () => { playSignal('bell'); flash(bellBtn); });
+  hornBtn.addEventListener('click', () => { playSignal('horn'); flash(hornBtn); });
+
+  // keyboard accessibility: space/enter already trigger click on <button>
+
+  // ---- volume sliders ----
+  document.getElementById('bellVol').addEventListener('input', e => {
+    state.bell.vol = parseFloat(e.target.value);
+  });
+  document.getElementById('hornVol').addEventListener('input', e => {
+    state.horn.vol = parseFloat(e.target.value);
+  });
+
+  // ---- custom file uploads ----
+  function setupUpload(key, inputId, nameId){
+    const input = document.getElementById(inputId);
+    const nameEl = document.getElementById(nameId);
+    input.addEventListener('change', () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (state[key].customUrl && state[key].customUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(state[key].customUrl);
+      }
+      const url = URL.createObjectURL(file);
+      state[key].customUrl = url;
+      state[key].isDefault = false;
+      state[key].loadFailed = false;
+      players[key].src = url;
+      nameEl.textContent = 'Wczytano: ' + file.name;
+    });
+  }
+  setupUpload('bell', 'bellFile', 'bellFileName');
+  setupUpload('horn', 'hornFile', 'hornFileName');
+
+  function resetSound(key, nameId, inputId){
+    if (state[key].customUrl && state[key].customUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(state[key].customUrl);
+    }
+    state[key].customUrl = DEFAULT_SOUNDS[key];
+    state[key].isDefault = true;
+    state[key].loadFailed = false;
+    players[key].src = DEFAULT_SOUNDS[key];
+    document.getElementById(nameId).textContent = 'Domyślny dźwięk: ' + DEFAULT_SOUNDS[key];
+    document.getElementById(inputId).value = '';
+  }
+  document.getElementById('bellReset').addEventListener('click', () => resetSound('bell','bellFileName','bellFile'));
+  document.getElementById('hornReset').addEventListener('click', () => resetSound('horn','hornFileName','hornFile'));
+
+  // unlock audio context on first interaction (mobile browsers)
+  document.body.addEventListener('pointerdown', () => {
+    if (actx.state === 'suspended') actx.resume();
+  }, { once: true });
+
+})();
+</script>
+</body>
+</html>
