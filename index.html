@@ -247,7 +247,7 @@
         <div class="row">
           <label for="bellFile">Własny dźwięk (wav / mp3 / ogg...)</label>
           <input type="file" id="bellFile" accept="audio/*">
-          <div class="filename" id="bellFileName">Domyślny dźwięk: sounds/bell.mp3</div>
+          <div class="filename" id="bellFileName">Domyślny dźwięk: sounds/bell2.mp3</div>
           <button class="reset-btn" id="bellReset">Przywróć domyślny</button>
         </div>
       </div>
@@ -261,7 +261,7 @@
         <div class="row">
           <label for="hornFile">Własny dźwięk (wav / mp3 / ogg...)</label>
           <input type="file" id="hornFile" accept="audio/*">
-          <div class="filename" id="hornFileName">Domyślny dźwięk: sounds/zonk.mp3</div>
+          <div class="filename" id="hornFileName">Domyślny dźwięk: sounds/zonk1.mp3</div>
           <button class="reset-btn" id="hornReset">Przywróć domyślny</button>
         </div>
       </div>
@@ -279,8 +279,8 @@
   // ---- state ----
   // Domyślne pliki dźwiękowe dostarczone przez użytkownika (w folderze /sounds obok index.html)
   const DEFAULT_SOUNDS = {
-    bell: 'sounds/bell.mp3',
-    horn: 'sounds/zonk.mp3'
+    bell: 'sounds/bell2.mp3',
+    horn: 'sounds/zonk1.mp3'
   };
   const state = {
     bell: { buffer: null, customUrl: DEFAULT_SOUNDS.bell, vol: 0.8, isDefault: true },
