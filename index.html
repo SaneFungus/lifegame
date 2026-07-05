@@ -273,7 +273,7 @@
           <label>Własny dźwięk</label>
           <label class="file-label" for="bellFile">📁 Wybierz plik audio</label>
           <input type="file" id="bellFile" accept="audio/*">
-          <div class="filename" id="bellFileName">Domyślny: sounds/bell2.mp3</div>
+          <div class="filename" id="bellFileName">Domyślny: sounds/bell3.mp3</div>
           <button class="reset-btn" id="bellReset">Przywróć domyślny</button>
         </div>
       </div>
@@ -303,7 +303,7 @@
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const actx = new AudioCtx();
 
-  const DEFAULT_SOUNDS = { bell: 'sounds/bell2.mp3', horn: 'sounds/zonk1.mp3' };
+  const DEFAULT_SOUNDS = { bell: 'sounds/bell3.mp3', horn: 'sounds/zonk1.mp3' };
   const state = {
     bell: { buffer: null, customUrl: DEFAULT_SOUNDS.bell, vol: 0.8, loadFailed: false },
     horn: { buffer: null, customUrl: DEFAULT_SOUNDS.horn, vol: 0.8, loadFailed: false }
