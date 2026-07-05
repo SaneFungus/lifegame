@@ -2,6 +2,8 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<!-- Kluczowe meta tagi dla mobile: blokada zoomu (żeby nie przypadkowo powiększyć), viewport-fit dla notcha -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>LifeGame — Dzwonek i Trąbka</title>
 <style>
   :root{
@@ -14,56 +16,61 @@
     --ivory:#ece6d6;
     --dim:#6b6f76;
     --line: rgba(236,230,214,0.12);
+    /* Bezpieczne strefy dla urządzeń z wcięciami (np. iPhone) */
+    --sat: env(safe-area-inset-top);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
   }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   html,body{
-    margin:0; padding:0; height:100%;
+    margin:0; padding:0; height:100%; width:100%;
     background:
       radial-gradient(ellipse at 50% -10%, rgba(201,162,39,0.08), transparent 55%),
       var(--bg-0);
     color:var(--ivory);
     font-family: 'Georgia', 'Iowan Old Style', serif;
     -webkit-font-smoothing:antialiased;
+    overscroll-behavior: none; /* Blokuje "gumowanie" ekranu na iOS */
   }
+  
+  /* Ukrywanie interfejsu w trybie pełnoekranowym */
+  body.is-fullscreen header, 
+  body.is-fullscreen footer, 
+  body.is-fullscreen .panel,
+  body.is-fullscreen .fs-btn { display: none !important; }
+  
+  body.is-fullscreen .stage { padding: 10px; justify-content: center; }
+  body.is-fullscreen .buttons { margin: 0; flex: 1; width: 100%; max-width: 100%; }
+
   .stage{
-    min-height:100vh;
+    min-height:100vh; min-height: 100dvh; /* Dynamic viewport height dla mobile */
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:28px 16px 40px;
+    padding: calc(20px + var(--sat)) calc(16px + var(--sar)) calc(20px + var(--sab)) calc(16px + var(--sal));
   }
-  header{
-    text-align:center;
-    margin-bottom:6px;
-  }
-  .eyebrow{
-    letter-spacing:0.35em;
-    text-transform:uppercase;
-    font-size:11px;
-    color:var(--dim);
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-  }
-  h1{
-    font-weight:400;
-    font-size:clamp(22px, 4vw, 34px);
-    margin:6px 0 0;
-    letter-spacing:0.02em;
-  }
+  header{ text-align:center; margin-bottom:6px; }
+  .eyebrow{ letter-spacing:0.35em; text-transform:uppercase; font-size:11px; color:var(--dim); font-family: sans-serif; }
+  h1{ font-weight:400; font-size:clamp(22px, 4vw, 34px); margin:6px 0 0; letter-spacing:0.02em; }
   h1 em{ color:var(--gold-bright); font-style:normal; }
 
   .buttons{
     display:flex;
-    gap:clamp(18px, 5vw, 56px);
+    gap: clamp(16px, 4vw, 40px);
     flex-wrap:wrap;
     justify-content:center;
-    margin: 34px 0 18px;
+    align-items:center;
+    margin: 20px 0;
     width:100%;
     max-width:900px;
+    flex: 1;
   }
 
+  /* --- PRZYCISKI SYGNAŁOWE --- */
   .signal{
     position:relative;
-    flex:1 1 300px;
+    flex: 1 1 45%;
     max-width:380px;
     aspect-ratio:1/1;
     border-radius:50%;
@@ -73,144 +80,160 @@
     align-items:center;
     justify-content:center;
     flex-direction:column;
-    gap:10px;
+    gap:8px;
     color:var(--ivory);
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-family: sans-serif;
     user-select:none;
-    -webkit-tap-highlight-color: transparent;
-    transition: transform .08s ease, box-shadow .18s ease;
+    touch-action: manipulation; /* Eliminuje opóźnienie 300ms przy podwójnym tapnięciu */
+    transition: transform .1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .15s ease;
+    will-change: transform;
   }
-  .signal:active{ transform: scale(0.96); }
+  
+  /* Stan naciśnięcia (aktywny dotyk) */
+  .signal.pressed{ transform: scale(0.92); }
 
-  .signal .icon{ font-size: clamp(46px, 10vw, 74px); line-height:1; }
+  .signal .icon{ font-size: clamp(40px, 12vw, 74px); line-height:1; pointer-events:none; }
   .signal .label{
     font-family:'Georgia', serif;
-    font-size:clamp(20px, 3vw, 28px);
-    letter-spacing:0.06em;
+    font-size:clamp(18px, 4vw, 28px);
+    letter-spacing:0.04em;
+    pointer-events:none;
   }
   .signal .sub{
-    font-size:11px;
-    letter-spacing:0.25em;
+    font-size:10px;
+    letter-spacing:0.15em;
     text-transform:uppercase;
     color:rgba(236,230,214,0.65);
+    pointer-events:none;
   }
 
   .bell{
     background: radial-gradient(circle at 35% 30%, #3a3110, var(--bg-1) 70%);
-    box-shadow:
-      0 0 0 3px rgba(201,162,39,0.35),
-      0 10px 30px rgba(0,0,0,0.55),
-      inset 0 0 40px rgba(201,162,39,0.08);
+    box-shadow: 0 0 0 3px rgba(201,162,39,0.35), 0 10px 30px rgba(0,0,0,0.55), inset 0 0 40px rgba(201,162,39,0.08);
   }
-  .bell:hover{ box-shadow: 0 0 0 3px var(--gold), 0 12px 34px rgba(0,0,0,0.6), inset 0 0 50px rgba(201,162,39,0.15); }
   .bell.flash{
-    box-shadow: 0 0 0 6px var(--gold-bright), 0 0 70px 12px rgba(240,201,74,0.55);
+    box-shadow: 0 0 0 8px var(--gold-bright), 0 0 80px 20px rgba(240,201,74,0.7);
+    background: radial-gradient(circle at 35% 30%, #5c4d15, var(--bg-1) 70%);
   }
 
   .horn{
     background: radial-gradient(circle at 35% 30%, #3a1210, var(--bg-1) 70%);
-    box-shadow:
-      0 0 0 3px rgba(163,35,31,0.4),
-      0 10px 30px rgba(0,0,0,0.55),
-      inset 0 0 40px rgba(163,35,31,0.08);
+    box-shadow: 0 0 0 3px rgba(163,35,31,0.4), 0 10px 30px rgba(0,0,0,0.55), inset 0 0 40px rgba(163,35,31,0.08);
   }
-  .horn:hover{ box-shadow: 0 0 0 3px var(--red), 0 12px 34px rgba(0,0,0,0.6), inset 0 0 50px rgba(163,35,31,0.15); }
   .horn.flash{
-    box-shadow: 0 0 0 6px var(--red-bright), 0 0 70px 12px rgba(226,55,47,0.55);
+    box-shadow: 0 0 0 8px var(--red-bright), 0 0 80px 20px rgba(226,55,47,0.7);
+    background: radial-gradient(circle at 35% 30%, #5c1a15, var(--bg-1) 70%);
   }
 
+  /* --- PRZycisk Fullscreen --- */
+  .fs-btn{
+    background: var(--bg-1); border: 1px solid var(--line); color: var(--dim);
+    padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    font-family: sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .fs-btn:active{ color: var(--ivory); border-color: var(--dim); }
+
+  /* --- PANEL USTAWIEŃ --- */
   .panel{
-    width:100%;
-    max-width:640px;
-    margin-top:10px;
-    border-top:1px solid var(--line);
-    padding-top:18px;
+    width:100%; max-width:640px; margin-top:10px;
+    border-top:1px solid var(--line); padding-top:18px;
   }
   .panel summary{
-    cursor:pointer;
-    text-align:center;
-    font-family:'Helvetica Neue', Arial, sans-serif;
-    font-size:12px;
-    letter-spacing:0.2em;
-    text-transform:uppercase;
-    color:var(--dim);
-    list-style:none;
-    padding-bottom: 12px;
+    cursor:pointer; text-align:center; font-family: sans-serif;
+    font-size:14px; /* Większe na mobile */
+    letter-spacing:0.15em; text-transform:uppercase; color:var(--dim);
+    list-style:none; padding: 12px; /* Większy obszar dotyku */
+    background: var(--bg-1); border-radius: 8px; border: 1px solid var(--line);
   }
   .panel summary::-webkit-details-marker{ display:none; }
   .panel summary:before{ content:"⚙ "; }
+  .panel[open] summary { margin-bottom: 18px; color: var(--ivory); border-color: var(--gold); }
 
   .controls{
     display:grid;
     grid-template-columns: 1fr 1fr;
-    gap:22px;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    gap:16px;
+    font-family: sans-serif;
   }
-  @media (max-width:560px){ .controls{ grid-template-columns: 1fr; } }
+  @media (max-width:600px){ .controls{ grid-template-columns: 1fr; } }
 
   .ctrl-group{
-    background: var(--bg-1);
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:16px 18px;
+    background: var(--bg-1); border:1px solid var(--line);
+    border-radius:12px; padding:18px;
   }
-  .ctrl-group h3{
-    margin:0 0 12px;
-    font-family:'Georgia', serif;
-    font-weight:400;
-    font-size:15px;
-  }
+  .ctrl-group h3{ margin:0 0 16px; font-family:'Georgia', serif; font-weight:400; font-size:18px; }
   .ctrl-group.gold h3{ color: var(--gold-bright); }
   .ctrl-group.red h3{ color: var(--red-bright); }
 
-  .row{ margin-bottom:12px; }
+  .row{ margin-bottom:18px; }
   .row label{
-    display:block;
-    font-size:11px;
-    letter-spacing:0.12em;
-    text-transform:uppercase;
-    color:var(--dim);
-    margin-bottom:6px;
+    display:block; font-size:12px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--dim); margin-bottom:10px;
   }
+
+  /* --- TOUCH-FRIENDLY RANGE SLIDERS --- */
   input[type="range"]{
-    width:100%;
-    accent-color: var(--gold-bright);
+    -webkit-appearance: none; appearance: none;
+    width:100%; height: 36px; /* Wysoki obszar dotyku */
+    background: transparent; outline: none; margin: 0;
   }
-  .ctrl-group.red input[type="range"]{ accent-color: var(--red-bright); }
+  input[type="range"]::-webkit-slider-runnable-track{
+    width:100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance: none; appearance: none;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--gold-bright); cursor: pointer;
+    margin-top: -12px; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .ctrl-group.red input[type="range"]::-webkit-slider-thumb{ background: var(--red-bright); }
+  
+  /* Firefox track */
+  input[type="range"]::-moz-range-track{ width:100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; border: none; }
+  input[type="range"]::-moz-range-thumb{ width: 32px; height: 32px; border-radius: 50%; background: var(--gold-bright); cursor: pointer; border: none; }
+  .ctrl-group.red input[type="range"]::-moz-range-thumb{ background: var(--red-bright); }
 
-  input[type="file"]{
-    width:100%;
-    font-size:12px;
-    color: var(--ivory);
+  /* --- CUSTOM FILE UPLOAD BUTTON --- */
+  .file-label{
+    display: block; width: 100%; text-align: center;
+    padding: 14px; background: rgba(255,255,255,0.03);
+    border: 1px dashed var(--line); border-radius: 8px;
+    color: var(--ivory); font-size: 14px; cursor: pointer;
+    transition: background 0.2s;
   }
+  .file-label:active{ background: rgba(255,255,255,0.08); }
+  input[type="file"]{ display: none; } /* Ukrywamy brzydki systemowy input */
 
-  .filename{
-    font-size:11px;
-    color:var(--dim);
-    margin-top:6px;
-    word-break:break-all;
-  }
+  .filename{ font-size:12px; color:var(--dim); margin-top:8px; word-break:break-all; text-align: center;}
 
   .reset-btn{
-    margin-top:4px;
-    background:none;
-    border:1px solid var(--line);
-    color:var(--dim);
-    font-size:11px;
-    padding:5px 10px;
-    border-radius:6px;
-    cursor:pointer;
-    font-family:'Helvetica Neue', Arial, sans-serif;
+    margin-top:10px; width: 100%; padding: 10px;
+    background:none; border:1px solid var(--line); color:var(--dim);
+    font-size:12px; border-radius:8px; cursor:pointer; font-family: sans-serif;
   }
-  .reset-btn:hover{ color:var(--ivory); border-color: var(--dim); }
+  .reset-btn:active{ color:var(--ivory); border-color: var(--dim); }
 
   footer{
-    margin-top:22px;
-    font-size:11px;
-    color:var(--dim);
-    font-family:'Helvetica Neue', Arial, sans-serif;
-    letter-spacing:0.05em;
-    text-align:center;
+    margin-top:16px; font-size:11px; color:var(--dim);
+    font-family: sans-serif; letter-spacing:0.05em; text-align:center;
+  }
+
+  /* --- UKŁADY DLA RÓŻNYCH ORIENTACJI --- */
+  /* Telefon w pionie (trzymany w ręce) */
+  @media (orientation: portrait) and (max-width: 600px) {
+    .buttons { flex-direction: column; }
+    .signal { flex: 0 1 auto; width: 75vw; max-width: 320px; }
+  }
+
+  /* Tablet/Telefon w poziomie (tryb sceny) */
+  @media (orientation: landscape) and (max-height: 700px) {
+    .stage { padding: 10px; }
+    .buttons { flex-direction: row; height: 100%; margin: 0; }
+    .signal { max-width: 45vh; flex: 1; }
+    .signal .sub { display: none; } /* Mniej tekstu, więcej miejsca na przycisk */
+    header { margin-bottom: 0; }
+    h1 { font-size: 18px; }
   }
 </style>
 </head>
@@ -221,14 +244,16 @@
     <h1>Głos <em>Gościa</em></h1>
   </header>
 
+  <button class="fs-btn" id="fsBtn">⛶ Tryb Sceny (Full)</button>
+
   <div class="buttons">
-    <button class="signal bell" id="bellBtn" aria-label="Dzwonek — prawda, tak było">
+    <button class="signal bell" id="bellBtn" aria-label="Dzwonek — prawda">
       <span class="icon">🔔</span>
       <span class="label">Dzwonek</span>
       <span class="sub">tak, tak było</span>
     </button>
 
-    <button class="signal horn" id="hornBtn" aria-label="Trąbka — fałsz, tak nie było">
+    <button class="signal horn" id="hornBtn" aria-label="Trąbka — fałsz">
       <span class="icon">📯</span>
       <span class="label">Trąbka</span>
       <span class="sub">nie, tak nie było</span>
@@ -245,9 +270,10 @@
           <input type="range" id="bellVol" min="0" max="1" step="0.01" value="0.8">
         </div>
         <div class="row">
-          <label for="bellFile">Własny dźwięk (wav / mp3 / ogg...)</label>
+          <label>Własny dźwięk</label>
+          <label class="file-label" for="bellFile">📁 Wybierz plik audio</label>
           <input type="file" id="bellFile" accept="audio/*">
-          <div class="filename" id="bellFileName">Domyślny dźwięk: sounds/bell2.mp3</div>
+          <div class="filename" id="bellFileName">Domyślny: sounds/bell2.mp3</div>
           <button class="reset-btn" id="bellReset">Przywróć domyślny</button>
         </div>
       </div>
@@ -259,16 +285,17 @@
           <input type="range" id="hornVol" min="0" max="1" step="0.01" value="0.8">
         </div>
         <div class="row">
-          <label for="hornFile">Własny dźwięk (wav / mp3 / ogg...)</label>
+          <label>Własny dźwięk</label>
+          <label class="file-label" for="hornFile">📁 Wybierz plik audio</label>
           <input type="file" id="hornFile" accept="audio/*">
-          <div class="filename" id="hornFileName">Domyślny dźwięk: sounds/zonk1.mp3</div>
+          <div class="filename" id="hornFileName">Domyślny: sounds/zonk1.mp3</div>
           <button class="reset-btn" id="hornReset">Przywróć domyślny</button>
         </div>
       </div>
     </div>
   </details>
 
-  <footer>Dotknij dużego przycisku, aby dać sygnał · dźwięki i pliki wczytują się tylko na czas tej sesji</footer>
+  <footer>Dotknij dużego przycisku · dźwięki wczytują się tylko na czas sesji</footer>
 </div>
 
 <script>
@@ -276,127 +303,122 @@
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const actx = new AudioCtx();
 
-  // ---- state ----
-  // Domyślne pliki dźwiękowe dostarczone przez użytkownika (w folderze /sounds obok index.html)
-  const DEFAULT_SOUNDS = {
-    bell: 'sounds/bell2.mp3',
-    horn: 'sounds/zonk1.mp3'
-  };
+  const DEFAULT_SOUNDS = { bell: 'sounds/bell2.mp3', horn: 'sounds/zonk1.mp3' };
   const state = {
-    bell: { buffer: null, customUrl: DEFAULT_SOUNDS.bell, vol: 0.8, isDefault: true },
-    horn: { buffer: null, customUrl: DEFAULT_SOUNDS.horn, vol: 0.8, isDefault: true }
+    bell: { buffer: null, customUrl: DEFAULT_SOUNDS.bell, vol: 0.8, loadFailed: false },
+    horn: { buffer: null, customUrl: DEFAULT_SOUNDS.horn, vol: 0.8, loadFailed: false }
   };
 
-  // ---- synthesized default sounds ----
-  function playSynthBell(vol){
+  // Synteza awaryjna
+  function playSynthBell(vol){ /* ... (bez zmian) ... */
     const now = actx.currentTime;
-    const freqs = [1046.5, 1568, 2093]; // bright bell-like partials
-    freqs.forEach((f, i) => {
-      const osc = actx.createOscillator();
-      const gain = actx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = f;
+    [1046.5, 1568, 2093].forEach((f, i) => {
+      const osc = actx.createOscillator(); const gain = actx.createGain();
+      osc.type = 'sine'; osc.frequency.value = f;
       const peak = vol * (i === 0 ? 0.5 : 0.22);
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(peak, now + 0.005);
+      gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(peak, now + 0.005);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.6 - i*0.2);
-      osc.connect(gain).connect(actx.destination);
-      osc.start(now);
-      osc.stop(now + 1.7);
+      osc.connect(gain).connect(actx.destination); osc.start(now); osc.stop(now + 1.7);
     });
   }
-
-  function playSynthHorn(vol){
+  function playSynthHorn(vol){ /* ... (bez zmian) ... */
     const now = actx.currentTime;
-    const osc = actx.createOscillator();
-    const osc2 = actx.createOscillator();
-    const gain = actx.createGain();
-    osc.type = 'sawtooth';
-    osc2.type = 'square';
-    osc.frequency.setValueAtTime(220, now);
-    osc2.frequency.setValueAtTime(221, now);
-    osc.frequency.linearRampToValueAtTime(180, now + 0.5);
-    osc2.frequency.linearRampToValueAtTime(181, now + 0.5);
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(vol * 0.5, now + 0.04);
-    gain.gain.setValueAtTime(vol * 0.5, now + 0.42);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
-    osc.connect(gain);
-    osc2.connect(gain);
-    gain.connect(actx.destination);
-    osc.start(now); osc2.start(now);
-    osc.stop(now + 0.6); osc2.stop(now + 0.6);
+    const osc = actx.createOscillator(); const osc2 = actx.createOscillator(); const gain = actx.createGain();
+    osc.type = 'sawtooth'; osc2.type = 'square';
+    osc.frequency.setValueAtTime(220, now); osc2.frequency.setValueAtTime(221, now);
+    osc.frequency.linearRampToValueAtTime(180, now + 0.5); osc2.frequency.linearRampToValueAtTime(181, now + 0.5);
+    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(vol * 0.5, now + 0.04);
+    gain.setValueAtTime(vol * 0.5, now + 0.42); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+    osc.connect(gain); osc2.connect(gain); gain.connect(actx.destination);
+    osc.start(now); osc2.start(now); osc.stop(now + 0.6); osc2.stop(now + 0.6);
   }
 
-  // ---- custom file playback via <audio> element (simplest, robust for any format) ----
   function makePlayer(key, src){
-    const audioEl = new Audio(src);
-    audioEl.preload = 'auto';
-    // jeśli plik mp3 nie wczyta się (np. zły folder/nazwa), wracamy do dźwięku syntezowanego
-    audioEl.addEventListener('error', () => {
-      state[key].loadFailed = true;
-    });
+    const audioEl = new Audio(src); audioEl.preload = 'auto';
+    audioEl.addEventListener('error', () => { state[key].loadFailed = true; });
     return audioEl;
   }
-  const players = {
-    bell: makePlayer('bell', DEFAULT_SOUNDS.bell),
-    horn: makePlayer('horn', DEFAULT_SOUNDS.horn)
-  };
+  const players = { bell: makePlayer('bell', DEFAULT_SOUNDS.bell), horn: makePlayer('horn', DEFAULT_SOUNDS.horn) };
 
   function playSignal(key){
     const s = state[key];
     if (actx.state === 'suspended') actx.resume();
-
     if (s.customUrl && !s.loadFailed){
-      const el = players[key];
-      el.volume = s.vol;
-      el.currentTime = 0;
-      el.play().catch(()=>{
-        // fallback jeśli odtwarzanie się nie uda
-        if (key === 'bell') playSynthBell(s.vol); else playSynthHorn(s.vol);
-      });
+      const el = players[key]; el.volume = s.vol; el.currentTime = 0;
+      el.play().catch(()=>{ if (key === 'bell') playSynthBell(s.vol); else playSynthHorn(s.vol); });
     } else {
-      if (key === 'bell') playSynthBell(s.vol);
-      else playSynthHorn(s.vol);
+      if (key === 'bell') playSynthBell(s.vol); else playSynthHorn(s.vol);
     }
   }
 
-  function flash(el){
-    el.classList.add('flash');
-    setTimeout(()=> el.classList.remove('flash'), 260);
+  // --- OBSŁUGA DOTYKU, WIZUALIZACJI I HAPTYKI ---
+  function triggerSignal(key, btn){
+    playSignal(key);
+    
+    // 1. Flash
+    btn.classList.add('flash');
+    setTimeout(()=> btn.classList.remove('flash'), 260);
+    
+    // 2. Haptic feedback (Wibracje - działa głównie na Androidzie/Chrome)
+    if (navigator.vibrate) {
+        navigator.vibrate(key === 'bell' ? [20] : [40, 30, 40]); // Dzwonek: krótka. Trąbka: podwójna.
+    }
   }
 
-  // ---- wire up buttons ----
-  const bellBtn = document.getElementById('bellBtn');
-  const hornBtn = document.getElementById('hornBtn');
+  function setupButton(btn, key){
+    let isPressed = false;
+    
+    // Używamy pointerdown, aby reakcja była natychmiastowa (bez czekania na oderwanie palca)
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); // Zapobiega ghost-clicks i zaznaczaniu tekstu
+      if (isPressed) return;
+      isPressed = true;
+      btn.classList.add('pressed');
+      triggerSignal(key, btn);
+    });
 
-  bellBtn.addEventListener('click', () => { playSignal('bell'); flash(bellBtn); });
-  hornBtn.addEventListener('click', () => { playSignal('horn'); flash(hornBtn); });
+    const release = () => {
+      isPressed = false;
+      btn.classList.remove('pressed');
+    };
+    
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('pointerleave', release);
+  }
 
-  // keyboard accessibility: space/enter already trigger click on <button>
+  setupButton(document.getElementById('bellBtn'), 'bell');
+  setupButton(document.getElementById('hornBtn'), 'horn');
 
-  // ---- volume sliders ----
-  document.getElementById('bellVol').addEventListener('input', e => {
-    state.bell.vol = parseFloat(e.target.value);
+  // --- FULLSCREEN API ---
+  const fsBtn = document.getElementById('fsBtn');
+  fsBtn.addEventListener('click', () => {
+    const docEl = document.documentElement;
+    if (!document.fullscreenElement) {
+      docEl.requestFullscreen().catch(err => {
+        alert(`Nie udało się wejść w tryb pełnoekranowy: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
   });
-  document.getElementById('hornVol').addEventListener('input', e => {
-    state.horn.vol = parseFloat(e.target.value);
+  
+  document.addEventListener('fullscreenchange', () => {
+    document.body.classList.toggle('is-fullscreen', !!document.fullscreenElement);
   });
 
-  // ---- custom file uploads ----
+  // --- SUWAKI I PLIKI ---
+  document.getElementById('bellVol').addEventListener('input', e => state.bell.vol = parseFloat(e.target.value));
+  document.getElementById('hornVol').addEventListener('input', e => state.horn.vol = parseFloat(e.target.value));
+
   function setupUpload(key, inputId, nameId){
     const input = document.getElementById(inputId);
     const nameEl = document.getElementById(nameId);
     input.addEventListener('change', () => {
-      const file = input.files && input.files[0];
-      if (!file) return;
-      if (state[key].customUrl && state[key].customUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(state[key].customUrl);
-      }
+      const file = input.files && input.files[0]; if (!file) return;
+      if (state[key].customUrl && state[key].customUrl.startsWith('blob:')) URL.revokeObjectURL(state[key].customUrl);
       const url = URL.createObjectURL(file);
-      state[key].customUrl = url;
-      state[key].isDefault = false;
-      state[key].loadFailed = false;
+      state[key].customUrl = url; state[key].loadFailed = false;
       players[key].src = url;
       nameEl.textContent = 'Wczytano: ' + file.name;
     });
@@ -405,23 +427,19 @@
   setupUpload('horn', 'hornFile', 'hornFileName');
 
   function resetSound(key, nameId, inputId){
-    if (state[key].customUrl && state[key].customUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(state[key].customUrl);
-    }
-    state[key].customUrl = DEFAULT_SOUNDS[key];
-    state[key].isDefault = true;
-    state[key].loadFailed = false;
+    if (state[key].customUrl && state[key].customUrl.startsWith('blob:')) URL.revokeObjectURL(state[key].customUrl);
+    state[key].customUrl = DEFAULT_SOUNDS[key]; state[key].loadFailed = false;
     players[key].src = DEFAULT_SOUNDS[key];
-    document.getElementById(nameId).textContent = 'Domyślny dźwięk: ' + DEFAULT_SOUNDS[key];
+    document.getElementById(nameId).textContent = 'Domyślny: ' + DEFAULT_SOUNDS[key];
     document.getElementById(inputId).value = '';
   }
   document.getElementById('bellReset').addEventListener('click', () => resetSound('bell','bellFileName','bellFile'));
   document.getElementById('hornReset').addEventListener('click', () => resetSound('horn','hornFileName','hornFile'));
 
-  // unlock audio context on first interaction (mobile browsers)
-  document.body.addEventListener('pointerdown', () => {
-    if (actx.state === 'suspended') actx.resume();
-  }, { once: true });
+  // Odblokowanie AudioContext na pierwszym dotyku (wymóg iOS Safari)
+  const unlock = () => { if (actx.state === 'suspended') actx.resume(); };
+  document.addEventListener('touchstart', unlock, { once: true, passive: true });
+  document.addEventListener('pointerdown', unlock, { once: true });
 
 })();
 </script>
